@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2024 Your Name
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+`default_nettype none
+
+module tt_um_enjimneering_spi_m (
+    input  wire [7:0] ui_in,    // Dedicated inputs
+    output wire [7:0] uo_out,   // Dedicated outputs
+    input  wire [7:0] uio_in,   // IOs: Input path
+    output wire [7:0] uio_out,  // IOs: Output path
+    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
+    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
+    input  wire       clk,      // clock
+    input  wire       rst_n     // reset_n - low to reset
+);
+
+  // -----------------------------------------------------------------------------
+  // Internal Signals
+  // --------------------------------------------------------------------------
+    
+    // SPI Master Controller
+    reg [15:0] addr;               // address to read from
+    wire       start;              // pulse to start transaction
+    wire       last;               // asserted when this is the last byte to read in sequential mode
+    wire       busy;               // set while transactions are in progress
+    wire       valid;              // 1 for one clk when data_out is valid
+    wire [7:0] data_out;           // received byte
+
+    // VGA Controller
+    reg        vga_hsync;          // VGA horizontal sync
+    reg        vga_vsync;          // VGA vertical sync  
+    wire       display_on;         // high when the current pixel is within the visible display area  
+    wire       vga_frame_end;      // high for one clk at the end of each frame
+    wire [9:0] vha_screen_hpos;    // horizontal pixel position (0-639)
+    wire [9:0] vga_screen_vpos;    // vertical pixel position (0-479)
+
+    // VGA Pixel Color (RR GG BB)
+    wire [5:0] pixel_color;          // 6-bit pixel color from 64-color palette (2 bits each for R, G, B)
+
+  spi_mem_ctrl_core u_spi_mem_ctrl_core (
+    .clk         (clk),
+    .rst_n       (rst_n | ui_in[7]), // This should probably be tech depenednt reset logic, but for now we can use an input to trigger reset
+    
+    // Control signals 
+    .start       (start),
+    .last        (ui_in[0]),
+    .addr        (addr),
+    .busy        (uio_out[0]),
+    .valid       (uio_out[1]),
+    .data_out    (data_out),
+
+    // SPI signals
+    .cs_n        (uio_out[0]), // connect to CS_N
+    .sck         (uio_out[1]), // connect to SCK
+    .mosi        (uio_out[2]), // connect to MOSI
+    .miso        (uio_in[3])   // connect to MISO
+  );
+
+  vga_core u_vga_core (
+    .clk            (clk),
+    .rst            (~rst_n),
+    .hsync          (vga_hsync),
+    .vsync          (vga_vsync),
+    .display_on     (display_on),
+    .screen_hpos    (vha_screen_hpos),
+    .screen_vpos    (vga_screen_vpos),
+    .frame_end      (vga_frame_end)
+  );
+
+  // Fetch Controller
+  always @(posedge clk) begin
+    if (~rst_n) begin
+      addr <= 16'h0000;
+    end else if (vga_frame_end) begin
+      addr <= addr + 16'h0001;
+    end
+  end
+
+  // SPI control signals
+  assign start = vga_frame_end & ui_in[1]; // Start SPI transaction at the end of each frame
+  assign last  = ui_in[0];                 // Controllable read one byte (no sequential reads)
+
+  // VGA Pixel Color assignments
+  assign pixel_color = data_out[5:0]; // connect pixel color to data_out
+
+  assign uo_out[0] = display_on & pixel_color[5]; // R1
+  assign uo_out[4] = display_on & pixel_color[4]; // R2
+  assign uo_out[1] = display_on & pixel_color[3]; // G1
+  assign uo_out[5] = display_on & pixel_color[2]; // G2
+  assign uo_out[2] = display_on & pixel_color[1]; // B1
+  assign uo_out[6] = display_on & pixel_color[0]; // G2
+
+  assign uo_out[3] = vga_vsync;
+  assign uo_out[7] = vga_hsync;
+endmodule
