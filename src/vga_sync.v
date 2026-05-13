@@ -1,11 +1,11 @@
 // =======================================================================
-// Module:      VGA Core
+// Module:      VGA Sync
 // Project:     Tetra-SoC, by SHaRC
 // Description: Generates VGA timing signals for 640x480 @ 60Hz
 //              Uses standard 25.175 MHz pixel clock.   
 // =======================================================================
 
-module vga_core (  
+module vga_sync (  
   input             clk,
   input             rst,
   output reg        hsync,

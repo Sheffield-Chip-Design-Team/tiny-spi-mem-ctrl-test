@@ -137,7 +137,7 @@ module spi_mem_ctrl_core (
           endcase
       end
   end
-  
+
   // drive sck and mosi based on state and phase
   always @(posedge clk_spi) begin
     if (!rst_n) begin

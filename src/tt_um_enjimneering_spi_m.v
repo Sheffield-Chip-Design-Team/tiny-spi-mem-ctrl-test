@@ -39,6 +39,13 @@ module tt_um_enjimneering_spi_m (
     // VGA Pixel Color (RR GG BB)
     wire [5:0] pixel_color;          // 6-bit pixel color from 64-color palette (2 bits each for R, G, B)
 
+    // output wire assignments
+    reg [7:0] uo_out_r;
+
+  // -----------------------------------------------------------------------------
+  // SPI Fetch with VGA Display
+  // --------------------------------------------------------------------------
+    
   spi_mem_ctrl_core u_spi_mem_ctrl_core (
     .clk         (clk),
     .rst_n       (rst_n | ui_in[7]), // This should probably be tech depenednt reset logic, but for now we can use an input to trigger reset
@@ -58,7 +65,7 @@ module tt_um_enjimneering_spi_m (
     .miso        (uio_in[3])   // connect to MISO
   );
 
-  vga_core u_vga_core (
+  vga_sync u_vga_sync (
     .clk            (clk),
     .rst            (~rst_n),
     .hsync          (vga_hsync),
@@ -69,6 +76,10 @@ module tt_um_enjimneering_spi_m (
     .frame_end      (vga_frame_end)
   );
 
+  // --------------------------------------------------------------------------
+  // Address Control 
+  // --------------------------------------------------------------------------
+    
   // Fetch Controller
   always @(posedge clk) begin
     if (~rst_n) begin
@@ -78,6 +89,10 @@ module tt_um_enjimneering_spi_m (
     end
   end
 
+  // --------------------------------------------------------------------------
+  // IO Assignmenets
+  // --------------------------------------------------------------------------
+
   // SPI control signals
   assign start = vga_frame_end & ui_in[1]; // Start SPI transaction at the end of each frame
   assign last  = ui_in[0];                 // Controllable read one byte (no sequential reads)
@@ -85,13 +100,18 @@ module tt_um_enjimneering_spi_m (
   // VGA Pixel Color assignments
   assign pixel_color = data_out[5:0]; // connect pixel color to data_out
 
-  assign uo_out[0] = display_on & pixel_color[5]; // R1
-  assign uo_out[4] = display_on & pixel_color[4]; // R2
-  assign uo_out[1] = display_on & pixel_color[3]; // G1
-  assign uo_out[5] = display_on & pixel_color[2]; // G2
-  assign uo_out[2] = display_on & pixel_color[1]; // B1
-  assign uo_out[6] = display_on & pixel_color[0]; // G2
+  // register outputs for glich prevention
+  always @(posedge clk) begin
+    uo_out_r[0] <= display_on & pixel_color[5]; // R1
+    uo_out_r[4] <= display_on & pixel_color[4]; // R2
+    uo_out_r[1] <= display_on & pixel_color[3]; // G1
+    uo_out_r[5] <= display_on & pixel_color[2]; // G2
+    uo_out_r[2] <= display_on & pixel_color[1]; // B1
+    uo_out_r[6] <= display_on & pixel_color[0]; // G2
+    uo_out_r[3] <= vga_vsync;
+    uo_out_r[7] <= vga_hsync;
+  end
 
-  assign uo_out[3] = vga_vsync;
-  assign uo_out[7] = vga_hsync;
+  assign uo_out = uo_out_r;
+
 endmodule
