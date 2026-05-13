@@ -30,6 +30,7 @@ module tt_um_enjimneering_spi_m (
     wire       spi_cs_n;
     wire       spi_sck;
     wire       spi_mosi;
+    wire       spi_miso;
 
     // VGA Controller
     wire       vga_hsync;          // VGA horizontal sync
@@ -65,7 +66,7 @@ module tt_um_enjimneering_spi_m (
     .cs_n        (spi_cs_n), // connect to CS_N
     .sck         (spi_sck),  // connect to SCK
     .mosi        (spi_mosi), // connect to MOSI
-    .miso        (uio_in[3])   // connect to MISO
+    .miso        (spi_miso)   // connect to MISO
   );
 
   vga_sync u_vga_sync (
@@ -103,6 +104,8 @@ module tt_um_enjimneering_spi_m (
   assign uio_out[0] = spi_cs_n;
   assign uio_out[1] = spi_sck;
   assign uio_out[2] = spi_mosi;
+  assign spi_miso   = uio_in[3];
+  assign uio_out[3] = 1'b0; 
   assign uio_out[4] = busy;
   assign uio_out[5] = valid;
   assign uio_out[6] = data_out[0];
