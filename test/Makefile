@@ -3,10 +3,10 @@
 
 # defaults
 SIM ?= icarus
-FST ?= -fst # Use more efficient FST format
+# FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v
+PROJECT_SOURCES = tt_um_enjimneering_spi_mem.v spi_mem_ctrl.v vga_sync.v
 
 ifneq ($(GATES),yes)
 
@@ -36,6 +36,7 @@ COMPILE_ARGS 		+= -I$(SRC_DIR)
 
 # Include the testbench sources:
 VERILOG_SOURCES += $(PWD)/tb.v
+VERILOG_SOURCES += $(PWD)/../model/spi_ram_model.v
 TOPLEVEL = tb
 
 # List test modules to run, separated by commas and without the .py suffix:

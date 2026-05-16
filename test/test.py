@@ -3,38 +3,38 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import ClockCycles, RisingEdge
 
 
 @cocotb.test()
-async def test_project(dut):
+async def test_spi_read_top(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, unit="us")
+    clock = Clock(dut.clk, 20, unit="ns")
     cocotb.start_soon(clock.start())
 
-    # Reset
-    dut._log.info("Reset")
     dut.ena.value = 1
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
 
-    dut._log.info("Test project behavior")
+    dut.ram.mem[0].value = 0xA5
+    dut.ram.mem[1].value = 0x5A
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    ui_in = 0
+    ui_in |= 0 << 0  # test_mode = 0 (SPI)
+    ui_in |= 1 << 1    # start pulse
+    ui_in |= 1 << 2    # last
+    ui_in |= 0x0 << 4  # addr high nibble
 
-    # Wait for one clock cycle to see the output values
+    dut.ui_in.value = ui_in
     await ClockCycles(dut.clk, 1)
+    dut.ui_in.value = 0
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+    if dut.uio_out[6].value == 0:
+        await RisingEdge(dut.clk)
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    await ClockCycles(dut.clk, 1)
+    assert dut.uo_out.value == 0xA5
