@@ -33,7 +33,10 @@ async def test_spi_read_top(dut):
     await ClockCycles(dut.clk, 1)
     dut.ui_in.value = 0
 
-    if dut.uio_out[6].value == 0:
+
+    for _ in range(10):
+        if int(dut.uio_out.value) & (1 << 6):
+            break
         await RisingEdge(dut.clk)
 
     await ClockCycles(dut.clk, 1)

@@ -31,12 +31,6 @@ module tb ();
 
   assign uio_in_to_dut = {uio_in[7:4], spi_miso, uio_in[2:0]};
 
-  initial begin
-    if (&{uo_out, uio_oe, 1'b0}) begin
-      $display("unused");
-    end
-  end
-
   spi_ram_model #(.MEM_BYTES(256)) ram (
       .cs_n (uio_out[0]),
       .sck  (uio_out[1]),
