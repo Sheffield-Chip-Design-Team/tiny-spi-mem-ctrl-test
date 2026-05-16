@@ -163,5 +163,5 @@ module tt_um_enjimneering_spi_mem (
     end
 
     assign uo_out = uo_out_reg;
-    wire unused_inputs  = &{uio_in[7:4], uio_in[2:0]};
+    wire unused_inputs  = &{ena,uio_in[7:4], uio_in[2:0]};
 endmodule
