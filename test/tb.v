@@ -22,6 +22,7 @@ module tb ();
   wire [7:0] uio_in;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
+  
   wire [7:0] uio_in_to_dut;
   wire       spi_miso;
 `ifdef GL_TEST

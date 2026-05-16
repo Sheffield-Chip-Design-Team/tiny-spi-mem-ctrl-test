@@ -89,7 +89,7 @@ module tt_um_enjimneering_spi_mem (
 
     spi_mem_ctrl u_spi_mem_ctrl (
       .clk         (clk),
-      .rst_n       (rst_n & ~ui_in[3]), 
+      .rst_n       (rst_n & ~ui_in[3]),
 
       // Control signals 
       .start       (start),
@@ -112,7 +112,7 @@ module tt_um_enjimneering_spi_mem (
 
     vga_sync u_vga_sync (
       .clk            (clk),
-      .rst            (~rst_n & ~ui_in[4]), 
+      .rst            (~rst_n | ui_in[4]), 
       .hsync          (hsync),
       .vsync          (vsync),
       .display_on     (display_on),
@@ -146,16 +146,19 @@ module tt_um_enjimneering_spi_mem (
     assign uio_out[2]   = spi_mosi;
     assign spi_miso     = uio_in[3];
     
+    assign uio_out[3] = 0;
+
     // data status bits
-    assign uio_out[4:3] = spi_data_out[7:6];
+    assign uio_out[5:4] = spi_data_out[7:6];
 
     // Status signals for testing
-    assign uio_out[7:5] = {busy, valid, last}; // SPI status signals for testing
+    assign uio_out[7:6] = {busy, valid}; // SPI status signals for testing
 
     // VGA output
     assign {R,G,B}      = pixel_col;
     assign vga_out      = {hsync, B[0], G[0], R[0], vsync, B[1], G[1], R[1]};
 
+    // registerd output mux to prevent glitches
     always @(posedge clk) begin
      uo_out_reg <= (test_mode == 0)
        ? spi_data_out
@@ -163,5 +166,5 @@ module tt_um_enjimneering_spi_mem (
     end
 
     assign uo_out = uo_out_reg;
-    wire unused_inputs  = &{ena,uio_in[7:4], uio_in[2:0]};
+    wire unused_inputs  = &{ena, uio_in[7:4], uio_in[2:0]};
 endmodule
