@@ -1,11 +1,11 @@
 // =======================================================================
-// Module:      SPI Read Byte
+// Module:      SPI Mem Ctrl
 // Project:     Tetra-SoC, by SHaRC
 // Description: Reads N bytes from 23LC512-style SPI RAM.
 //              Uses sequential mode 0x03 + 16-bit address.
 // =======================================================================
 
-module spi_mem_ctrl_core (
+module spi_mem_ctrl (
   input  wire        clk,
   input  wire        rst_n,
 
@@ -55,7 +55,6 @@ module spi_mem_ctrl_core (
           shift_in  <= 8'h00;
           bit_count <= 5'd0;
       end else begin
-
           // default
           valid <= 1'b0;
           case (state)

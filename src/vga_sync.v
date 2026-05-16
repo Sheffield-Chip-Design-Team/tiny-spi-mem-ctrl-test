@@ -103,5 +103,5 @@ module vga_sync (
 
     assign display_on  = (hpos < H_DISPLAY) && (vpos < V_DISPLAY);
     assign frame_end   = hblanked && vblanked;
-
+    
 endmodule
