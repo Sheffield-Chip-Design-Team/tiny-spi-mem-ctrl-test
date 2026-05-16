@@ -24,37 +24,33 @@ module tt_um_enjimneering_spi_mem (
     wire [15:0] addr;              // address to read from
     wire        start;             // pulse to start transaction
     wire        last;              // asserted when this is the last byte to read in sequential mode
-    wire       busy;               // set while transactions are in progress
-    wire       valid;              // 1 for one clk when data_out is valid
-    wire [7:0] data_out;           // received byte
+    wire        busy;               // set while transactions are in progress
+    wire        valid;              // 1 for one clk when data_out is valid
+    wire [7:0]  spi_data_out;       // received byte
 
-    wire       spi_cs_n;           
-    wire       spi_sck;
-    wire       spi_mosi;
-    wire       spi_miso;
+    wire        spi_cs_n;           
+    wire        spi_sck;
+    wire        spi_mosi;
+    wire        spi_miso;
     
     // VGA signals
-    wire       hsync;
-    wire       vsync;
+    wire        hsync;
+    wire        vsync;
+    wire [9:0]  pix_x;
+    wire [9:0]  pix_y;
+    wire [1:0]  R;
+    wire [1:0]  G;
+    wire [1:0]  B;
+    wire [7:0]  vga_out;
 
-    wire [9:0] pix_x;
-    wire [9:0] pix_y;
-
-    wire [1:0] R;
-    wire [1:0] G;
-    wire [1:0] B;
-
-    wire [7:0] vga_out;
-    wire [7:0] spi_data_out;
-
-    reg [15:0] vga_addr;           // address to read from
-    wire       frame_end;          // pulse at the end of each frame
-    reg [5:0]  pixel_col;          // 2 bits per color
+    reg [15:0]  vga_addr;           // address to read from
+    wire        frame_end;          // pulse at the end of each frame
+    reg [5:0]   pixel_col;          // 2 bits per color
+    wire        display_on;         // high when pix_x and pix_y are within the visible area
 
     // Test mode control
-    wire       test_mode;          // when 0, output SPI data on IOs, when 1 on the VGA signals
-    reg [7:0]  uo_out_reg;
-
+    wire        test_mode;          // when 0, output SPI data on IOs, when 1 on the VGA signals
+    reg [7:0]   uo_out_reg;
 
   // --------------------------------------------------------------------------------------
   // Test logic 
@@ -64,7 +60,7 @@ module tt_um_enjimneering_spi_mem (
 
     assign start = (test_mode == 0)
        ? ui_in[1]
-       : (pix_x == 0 && pix_y == 0);
+       : (pix_x == 0 && pix_y == 0 && display_on); 
 
     assign last = (test_mode == 0)
       ? ui_in[2]
@@ -73,10 +69,6 @@ module tt_um_enjimneering_spi_mem (
     assign addr = (test_mode == 0)
       ? {ui_in[7:4], 12'h00}
       : vga_addr;
-
-    // assign uo_out = (test_mode == 0)
-    //   ? vga_out
-    //   : spi_data_out;
 
   // --------------------------------------------------------------------------------------
   // SPI signals
@@ -123,7 +115,7 @@ module tt_um_enjimneering_spi_mem (
       .rst            (~rst_n & ~ui_in[4]), 
       .hsync          (hsync),
       .vsync          (vsync),
-      .display_on     (),
+      .display_on     (display_on),
       .screen_hpos    (pix_x),
       .screen_vpos    (pix_y),
       .frame_end      (frame_end)
@@ -138,7 +130,7 @@ module tt_um_enjimneering_spi_mem (
         pixel_col <= 0;
       end
       else if (valid) begin
-        pixel_col <= data_out[5:0];
+        pixel_col <= spi_data_out[5:0];
       end
     end
 
@@ -155,7 +147,7 @@ module tt_um_enjimneering_spi_mem (
     assign spi_miso     = uio_in[3];
     
     // data status bits
-    assign uio_out[4:3] = data_out[7:6];
+    assign uio_out[4:3] = spi_data_out[7:6];
 
     // Status signals for testing
     assign uio_out[7:5] = {busy, valid, last}; // SPI status signals for testing
